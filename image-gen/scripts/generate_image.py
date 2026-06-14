@@ -8,6 +8,7 @@ reach Spaces that are not MCP-enabled (e.g. black-forest-labs/FLUX.1-Krea-dev, Q
 Engines:
   krea-official  -> black-forest-labs/FLUX.1-Krea-dev   (the real FLUX.1-Krea-dev)
   qwen-image     -> Qwen/Qwen-Image                      (the official Qwen-Image)
+  sdxl           -> hysts/SDXL                           (Stability SDXL base 1.0 + refiner)
 
 Auth: official Spaces run on ZeroGPU and need a Hugging Face token for reliable quota.
   Set HF_TOKEN in the environment (a "Read" token from https://huggingface.co/settings/tokens)
@@ -24,11 +25,13 @@ import os
 import re
 import shutil
 import sys
+import time
 
 # Engine -> official Space id. Override per-call with --space.
 ENGINES = {
     "krea-official": "black-forest-labs/FLUX.1-Krea-dev",
     "qwen-image": "Qwen/Qwen-Image",
+    "sdxl": "hysts/SDXL",  # Stability SDXL base 1.0 (+refiner) — from Stability-AI/generative-models
 }
 
 # api_name candidates preferred in this order when none is given via --api-name.
@@ -178,21 +181,33 @@ def main():
     call_args = _build_call_args(params, args.prompt, overrides)
     print(f"[*] Endpoint: {api_name}  ({len(call_args)} args)")
     print(f"[*] Prompt: {args.prompt}")
-    try:
-        result = client.predict(*call_args, api_name=api_name)
-    except Exception as e:
-        msg = str(e)
-        etype = type(e).__name__
-        hint = ""
-        if etype == "AppError":
-            hint = ("\n    -> SERVER-SIDE error inside the Space itself (not your script, token, or quota). "
-                    "Retry later, or point at a working mirror with --space <author/name> "
-                    "(find one via the HF MCP space_search).")
-        elif "gpu" in msg.lower() or "quota" in msg.lower() or "zerogpu" in msg.lower():
-            hint = "\n    -> Looks like a ZeroGPU quota/availability issue. Add/refresh HF_TOKEN, or retry later."
-        elif "api_name" in msg.lower() or "endpoint" in msg.lower():
-            hint = f"\n    -> Endpoint '{api_name}' may be wrong. Run with --list-api to see the real names, then pass --api-name."
-        sys.exit(f"[!] Generation failed: {etype}: {e}{hint}")
+
+    # ZeroGPU often replies "No GPU was available after 60s" under load — transient.
+    # Retry those a few times before giving up; real errors fail fast.
+    attempts = 4
+    result = None
+    for attempt in range(1, attempts + 1):
+        try:
+            result = client.predict(*call_args, api_name=api_name)
+            break
+        except Exception as e:
+            msg = str(e); etype = type(e).__name__; low = msg.lower()
+            transient = ("no gpu" in low or "gpu was available" in low
+                         or "gpu is currently" in low or "queue" in low or "503" in low)
+            if transient and attempt < attempts:
+                print(f"[*] GPU busy (attempt {attempt}/{attempts}) - retrying in 10s...")
+                time.sleep(10)
+                continue
+            hint = ""
+            if "gpu" in low or "quota" in low or "zerogpu" in low or "queue" in low:
+                hint = ("\n    -> ZeroGPU availability: the free queue couldn't get a GPU in time. "
+                        "Retry (often works within a few tries), or HF PRO for queue priority.")
+            elif etype == "AppError":
+                hint = ("\n    -> SERVER-SIDE error inside the Space (not your script, token, or quota). "
+                        "Retry later, or point at a working mirror with --space <author/name>.")
+            elif "api_name" in low or "endpoint" in low:
+                hint = f"\n    -> Endpoint '{api_name}' may be wrong. Run --list-api, then pass --api-name."
+            sys.exit(f"[!] Generation failed: {etype}: {e}{hint}")
 
     img = _find_image(result)
     if not img:
