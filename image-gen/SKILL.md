@@ -1,6 +1,6 @@
 ---
 name: image-gen
-description: Generate images from a text prompt via Hugging Face. Use WHENEVER the user asks to create/generate/make/render an image, picture, illustration, artwork, logo, or visual from a description (e.g. "generate an image of...", "make a picture of...", "render...", "/image-gen"), AND whenever you yourself decide an image would help. ALWAYS asks which engine to use (flux.1-krea-dev, z-image-turbo, krea-official, qwen-image) before generating. Requires the Hugging Face MCP server (authenticated) for the MCP engines and HF_TOKEN for the official gradio_client engines.
+description: Generate images from a text prompt via Hugging Face. Use WHENEVER the user asks to create/generate/make/render an image, picture, illustration, artwork, logo, or visual from a description (e.g. "generate an image of...", "make a picture of...", "render...", "/image-gen"), AND whenever you yourself decide an image would help. ALWAYS asks which engine to use (krea-official, qwen-image, flux.1-krea-dev) before generating. Requires the Hugging Face MCP server (authenticated) for the MCP engine and HF_TOKEN for the official gradio_client engines.
 ---
 
 # image-gen
@@ -11,20 +11,21 @@ Generate images from text prompts using Hugging Face. Works both when the user e
 
 **Before generating anything, you MUST ask the user which engine to use via `AskUserQuestion`.** This applies on EVERY invocation — including when you triggered the skill yourself, autonomously. Never silently pick an engine. The only exception: the user named a specific engine in their request (then use that one and skip the question).
 
-Present these four options every time:
+Present these three options every time:
 
 | Engine | Route | Token? | Notes |
 |--------|-------|--------|-------|
-| `flux.1-krea-dev` | MCP `dynamic_space` → `prithivMLmods/FLUX-REALISM` | none | Krea-dev via the authenticated MCP session. Solid default. |
-| `z-image-turbo` | MCP pinned tool `gr1_z_image_turbo_generate` | none | Fastest (8 steps). Good for drafts. |
-| `krea-official` | `generate_image.py` (gradio_client) → `black-forest-labs/FLUX.1-Krea-dev` | **HF_TOKEN** | The literal official Krea Space. |
-| `qwen-image` | `generate_image.py` (gradio_client) → `Qwen/Qwen-Image` | **HF_TOKEN** | The official Qwen-Image Space. Strong at text-in-image. |
+| `krea-official` | `generate_image.py` (gradio_client) → `black-forest-labs/FLUX.1-Krea-dev` | **HF_TOKEN** | The literal official Krea Space. Highest fidelity — the default/primary. |
+| `qwen-image` | `generate_image.py` (gradio_client) → `Qwen/Qwen-Image` | **HF_TOKEN** | Official Qwen-Image. Best at text-in-image (Space occasionally broken upstream). |
+| `flux.1-krea-dev` | MCP `dynamic_space` → `prithivMLmods/FLUX-REALISM` | none | Krea-dev via the authenticated MCP session; photoreal lean. No token needed. |
+
+(`z-image-turbo` was removed from the roster per the user's preference — do not offer it.)
 
 If you want, also ask for a resolution/aspect ratio in the same `AskUserQuestion` call (optional — default 1024×1024).
 
 ## Quota flag (state it before the first generation of a session)
 
-All engines run on Hugging Face **ZeroGPU**, which is quota-metered, not money-billed. Free tier = small daily allowance; PRO ≈ 25× more. When quota is spent you get a "quota exceeded / GPU busy" error — not a charge. The two MCP engines spend the authenticated session's quota; the two official engines spend the `HF_TOKEN` owner's quota.
+All engines run on Hugging Face **ZeroGPU**, which is quota-metered, not money-billed. Free tier = small daily allowance; PRO ≈ 25× more. When quota is spent you get a "quota exceeded / GPU busy" error — not a charge. The `flux.1-krea-dev` MCP engine spends the authenticated session's quota; the two official (script) engines spend the `HF_TOKEN` owner's quota.
 
 ## Procedure
 
@@ -37,9 +38,7 @@ All engines run on Hugging Face **ZeroGPU**, which is quota-metered, not money-b
 ```
 > `negative_prompt` MUST be present even though it's marked optional, or the call errors.
 
-**MCP route — `z-image-turbo`:** call `mcp__plugin_huggingface-skills_huggingface-skills__gr1_z_image_turbo_generate` with `{"prompt":"<PROMPT>","resolution":"1024x1024 ( 1:1 )"}`.
-
-Both MCP routes return a Gradio file **URL** that is **ephemeral** (lives on the Space replica's `/tmp/gradio/`). You MUST download it immediately — see step 2.
+The MCP route (`flux.1-krea-dev`) returns a Gradio file **URL** that is **ephemeral** (lives on the Space replica's `/tmp/gradio/`). You MUST download it immediately — see step 2.
 
 **gradio_client route — `krea-official` / `qwen-image`:** run the script with the venv Python (PowerShell):
 ```powershell
