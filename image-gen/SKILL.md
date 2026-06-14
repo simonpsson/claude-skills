@@ -69,4 +69,6 @@ Then set a Read token: `setx HF_TOKEN "hf_..."` and restart the app so child pro
 ## Notes
 - MCP engines require the `huggingface-skills` MCP server to be authenticated (OAuth as the HF user). If its tools aren't loaded, the user must authenticate it first. MCP engines do NOT use HF_TOKEN — they ride the authenticated session.
 - The official Space ids can change ownership; `generate_image.py` accepts `--space <author/name>` to override, and `--list-api` to discover the current endpoint signature.
+- Script flags: `--seed --steps --guidance --aspect --width --height` (each applied only if the Space exposes that parameter) and `--enhance` (default OFF — `prompt_enhance` is disabled for more literal output and to dodge broken enhancer steps). The script is param-aware: it reads the endpoint's parameter list and fills each slot with the Space's own default unless overridden.
+- If the script prints `AppError: <X>`, the failure is INSIDE the Space (server-side) — not your request. Retry later or use `--space` to point at a mirror. Known: on 2026-06-14 the official `Qwen/Qwen-Image` Space returned `AppError: NameError` (broken upstream); `krea-official`, `flux.1-krea-dev`, and `z-image-turbo` all worked.
 - Canonical script: `~\.claude\skills\image-gen\scripts\generate_image.py`. Venv: `~\Claude\tools\image-gen\.venv`. Output: `~\Claude\generated-images\`.

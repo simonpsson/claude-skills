@@ -62,6 +62,38 @@ def _pick_api_name(client, override):
     return named[0] if named else "/infer"
 
 
+def _endpoint_params(client, api_name):
+    """Return the ordered parameter dicts for a named endpoint, or [] if unknown."""
+    try:
+        api = client.view_api(return_format="dict") or {}
+        ep = (api.get("named_endpoints") or {}).get(api_name)
+        return ep.get("parameters", []) if ep else []
+    except Exception:
+        return []
+
+
+def _build_call_args(params, prompt, overrides):
+    """Build positional predict() args from the endpoint's own parameter list:
+    the prompt goes in the prompt slot, overrides[name] win where given, and
+    every other slot uses that parameter's own default. Falls back to prompt-only
+    if the parameter list can't be discovered."""
+    if not params:
+        return [prompt]
+    call_args = []
+    for i, prm in enumerate(params):
+        name = prm.get("parameter_name") or ""
+        is_prompt = name == "prompt" or (i == 0 and not prm.get("parameter_has_default", False))
+        if is_prompt:
+            call_args.append(prompt)
+        elif name in overrides:
+            call_args.append(overrides[name])
+        elif prm.get("parameter_has_default", False):
+            call_args.append(prm.get("parameter_default"))
+        else:
+            call_args.append(prompt)  # unexpected required arg with no default; best effort
+    return call_args
+
+
 def _find_image(result):
     """Walk an arbitrary gradio result and return the first local image file path."""
     stack = [result]
@@ -87,6 +119,14 @@ def main():
     p.add_argument("--prompt", help="text prompt")
     p.add_argument("--out", help="output file or directory (default: Claude\\generated-images\\)")
     p.add_argument("--api-name", help="override the Gradio endpoint name (e.g. /infer)")
+    p.add_argument("--seed", type=int, help="fixed seed (also turns randomize_seed off if present)")
+    p.add_argument("--steps", type=int, help="num_inference_steps override")
+    p.add_argument("--guidance", type=float, help="guidance_scale override")
+    p.add_argument("--aspect", help="aspect_ratio override (e.g. 1:1, 16:9) where supported")
+    p.add_argument("--width", type=int, help="width override where supported")
+    p.add_argument("--height", type=int, help="height override where supported")
+    p.add_argument("--enhance", action="store_true",
+                   help="keep the Space's prompt_enhance ON (default: OFF — more literal, avoids flaky enhancers)")
     p.add_argument("--token", help="HF token (else uses HF_TOKEN env var)")
     p.add_argument("--list-api", action="store_true", help="print the Space's API endpoints and exit")
     args = p.parse_args()
@@ -115,20 +155,44 @@ def main():
         p.error("--prompt is required (unless --list-api)")
 
     api_name = _pick_api_name(client, args.api_name)
-    print(f"[*] Endpoint: {api_name}")
+
+    # Map generic CLI knobs onto whatever parameter names the Space actually exposes.
+    # prompt_enhance defaults OFF: it keeps output literal and dodges Spaces whose
+    # enhancer step is broken (Qwen-Image raised a server-side NameError with it ON).
+    overrides = {"prompt_enhance": bool(args.enhance)}
+    if args.seed is not None:
+        overrides["seed"] = args.seed
+        overrides["randomize_seed"] = False
+    if args.steps is not None:
+        overrides["num_inference_steps"] = args.steps
+    if args.guidance is not None:
+        overrides["guidance_scale"] = args.guidance
+    if args.aspect:
+        overrides["aspect_ratio"] = args.aspect
+    if args.width is not None:
+        overrides["width"] = args.width
+    if args.height is not None:
+        overrides["height"] = args.height
+
+    params = _endpoint_params(client, api_name)
+    call_args = _build_call_args(params, args.prompt, overrides)
+    print(f"[*] Endpoint: {api_name}  ({len(call_args)} args)")
     print(f"[*] Prompt: {args.prompt}")
     try:
-        # Pass only the prompt; gradio_client fills remaining inputs with the Space's
-        # own component defaults. This is the version-robust minimal call.
-        result = client.predict(args.prompt, api_name=api_name)
+        result = client.predict(*call_args, api_name=api_name)
     except Exception as e:
         msg = str(e)
+        etype = type(e).__name__
         hint = ""
-        if "gpu" in msg.lower() or "quota" in msg.lower() or "zerogpu" in msg.lower():
+        if etype == "AppError":
+            hint = ("\n    -> SERVER-SIDE error inside the Space itself (not your script, token, or quota). "
+                    "Retry later, or point at a working mirror with --space <author/name> "
+                    "(find one via the HF MCP space_search).")
+        elif "gpu" in msg.lower() or "quota" in msg.lower() or "zerogpu" in msg.lower():
             hint = "\n    -> Looks like a ZeroGPU quota/availability issue. Add/refresh HF_TOKEN, or retry later."
         elif "api_name" in msg.lower() or "endpoint" in msg.lower():
             hint = f"\n    -> Endpoint '{api_name}' may be wrong. Run with --list-api to see the real names, then pass --api-name."
-        sys.exit(f"[!] Generation failed: {e}{hint}")
+        sys.exit(f"[!] Generation failed: {etype}: {e}{hint}")
 
     img = _find_image(result)
     if not img:
