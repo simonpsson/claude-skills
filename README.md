@@ -19,7 +19,7 @@ cd claude-skills && zip -r <skill-name>.zip <skill-name>
 
 ## Skills
 
-144 skills, grouped by area. Click a name for its `SKILL.md`.
+144 skills, grouped by area. Click a name for its `SKILL.md`. Regenerate this list with `python scripts/gen_readme.py`.
 
 ### Analysis, BI & general (35)
 
@@ -189,4 +189,4 @@ cd claude-skills && zip -r <skill-name>.zip <skill-name>
 
 ## Attribution & license
 
-Skills retain their original `license` and `author` frontmatter. The 40 full-stack development skills come from [Jeffallan/claude-skills](https://github.com/Jeffallan/claude-skills) (MIT) — full text in [`LICENSE-fullstack-dev-skills`](LICENSE-fullstack-dev-skills) and [`ATTRIBUTION.md`](ATTRIBUTION.md).
+Skills retain their original `license` and `author` frontmatter. The full-stack development skills come from [Jeffallan/claude-skills](https://github.com/Jeffallan/claude-skills) (MIT) — full text in [`LICENSE-fullstack-dev-skills`](LICENSE-fullstack-dev-skills) and [`ATTRIBUTION.md`](ATTRIBUTION.md).
