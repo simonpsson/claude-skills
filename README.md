@@ -1,6 +1,6 @@
 # claude-skills
 
-A curated collection of **144 [Claude Agent Skills](https://agentskills.io)**. Each skill is a folder with a `SKILL.md` plus any supporting `references/`, `scripts/`, or `assets/`.
+A curated collection of **162 [Claude Agent Skills](https://agentskills.io)**. Each skill is a folder with a `SKILL.md` plus any supporting `references/`, `scripts/`, or `assets/`.
 
 ## Install
 
@@ -19,7 +19,7 @@ cd claude-skills && zip -r <skill-name>.zip <skill-name>
 
 ## Skills
 
-144 skills, grouped by area. Click a name for its `SKILL.md`. Regenerate this list with `python scripts/gen_readme.py`.
+162 skills, grouped by area. Click a name for its `SKILL.md`. Regenerate this list with `python scripts/gen_readme.py`.
 
 ### Analysis, BI & general (35)
 
@@ -68,6 +68,31 @@ cd claude-skills && zip -r <skill-name>.zip <skill-name>
 | [pbi-report-builder](pbi-report-builder/SKILL.md) | [power-bi] Power BI PBIR Report Builder with IBCS Visuals. |
 | [pbi-requirements-gathering](pbi-requirements-gathering/SKILL.md) | [power-bi] Power BI Requirements Gathering — a structured, conversation-driven skill that captures everything needed before building a Power BI solution. |
 | [pbip-dependency-analyzer](pbip-dependency-analyzer/SKILL.md) | Power BI PBIP Dependency Analyzer. |
+
+### Data, cloud & infrastructure (18)
+
+> Curated from official vendor skill repos (Microsoft, ClickHouse, Neon, HashiCorp). See [ATTRIBUTION.md](ATTRIBUTION.md).
+
+| Skill | Description |
+| --- | --- |
+| [azure-ai-ml-py](azure-ai-ml-py/SKILL.md) | Azure Machine Learning SDK v2 for Python. |
+| [azure-ai-projects-py](azure-ai-projects-py/SKILL.md) | Build AI applications using the Azure AI Projects Python SDK (azure-ai-projects). |
+| [azure-identity-py](azure-identity-py/SKILL.md) | Azure Identity SDK for Python authentication with Microsoft Entra ID. |
+| [azure-keyvault-py](azure-keyvault-py/SKILL.md) | Azure Key Vault SDK for Python. |
+| [azure-mgmt-fabric-py](azure-mgmt-fabric-py/SKILL.md) | Azure Fabric Management SDK for Python. |
+| [azure-monitor-query-py](azure-monitor-query-py/SKILL.md) | Azure Monitor Query SDK for Python. |
+| [azure-search-documents-py](azure-search-documents-py/SKILL.md) | Azure AI Search SDK for Python. |
+| [azure-storage-blob-py](azure-storage-blob-py/SKILL.md) | Azure Blob Storage SDK for Python. |
+| [azure-storage-file-datalake-py](azure-storage-file-datalake-py/SKILL.md) | Azure Data Lake Storage Gen2 SDK for Python. |
+| [azure-verified-modules](azure-verified-modules/SKILL.md) | Azure Verified Modules (AVM) requirements and best practices for developing certified Azure Terraform modules. |
+| [chdb-datastore](chdb-datastore/SKILL.md) | Use when the user has tabular data (pandas DataFrame, parquet, csv, Arrow, json) and wants to filter, group, aggregate, join, or speed up slow pandas. |
+| [chdb-sql](chdb-sql/SKILL.md) | Use when the user wants to run SQL — especially analytical SQL — on local files (parquet/csv/json), URLs, S3 paths, or remote databases (Postgres, MySQL, MongoDB, ClickHouse Cloud, Iceberg, Delta Lake) without setting... |
+| [clickhouse-architecture-advisor](clickhouse-architecture-advisor/SKILL.md) | MUST USE when designing ClickHouse architectures, selecting between ingestion or modeling patterns, or translating best practices into workload-specific system designs. |
+| [clickhouse-best-practices](clickhouse-best-practices/SKILL.md) | MUST USE when reviewing ClickHouse schemas, queries, or configurations. |
+| [fastapi-router-py](fastapi-router-py/SKILL.md) | Create FastAPI routers with CRUD operations, authentication dependencies, and proper response models. |
+| [neon-postgres](neon-postgres/SKILL.md) | Guides and best practices for working with Neon Serverless Postgres. |
+| [pydantic-models-py](pydantic-models-py/SKILL.md) | Create Pydantic models following the multi-model pattern with Base, Create, Update, Response, and InDB variants. |
+| [terraform-style-guide](terraform-style-guide/SKILL.md) | Generate Terraform HCL code following HashiCorp's official style conventions and best practices. |
 
 ### Full-stack development (40)
 

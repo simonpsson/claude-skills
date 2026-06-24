@@ -22,6 +22,10 @@ REPO = pathlib.Path(__file__).resolve().parent.parent
 # hardcoded list, so the grouping stays correct as skills come and go.
 FULLSTACK_MARKER = "github.com/jeffallan"
 
+# "Data, cloud & infrastructure" = curated Azure/ClickHouse/Neon/Terraform vendor skills.
+DATA_INFRA_PREFIXES = ("azure-", "chdb", "clickhouse", "neon", "terraform", "tinybird")
+DATA_INFRA_EXTRA = {"fastapi-router-py", "pydantic-models-py"}
+
 
 def parse_frontmatter(text):
     m = re.match(r"^---\s*\n(.*?)\n---", text, re.S)
@@ -62,6 +66,8 @@ def classify(folder, frontmatter_text):
         return "Power BI"
     if folder.startswith("gsd"):
         return "GSD project workflow"
+    if folder.startswith(DATA_INFRA_PREFIXES) or folder in DATA_INFRA_EXTRA:
+        return "Data, cloud & infrastructure"
     return "Analysis, BI & general"
 
 
@@ -69,6 +75,7 @@ def main():
     groups = {
         "Analysis, BI & general": [],
         "Power BI": [],
+        "Data, cloud & infrastructure": [],
         "Full-stack development": [],
         "GSD project workflow": [],
     }
@@ -120,6 +127,12 @@ def main():
                 "",
                 "> Added from [Jeffallan/claude-skills](https://github.com/Jeffallan/claude-skills) "
                 "(MIT). See [ATTRIBUTION.md](ATTRIBUTION.md).",
+            ]
+        if title == "Data, cloud & infrastructure":
+            out += [
+                "",
+                "> Curated from official vendor skill repos (Microsoft, ClickHouse, Neon, HashiCorp). "
+                "See [ATTRIBUTION.md](ATTRIBUTION.md).",
             ]
         out += ["", "| Skill | Description |", "| --- | --- |"]
         for folder, name, desc in sorted(items):
