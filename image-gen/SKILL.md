@@ -72,3 +72,12 @@ Then set a Read token: `setx HF_TOKEN "hf_..."` and restart the app so child pro
 - Script flags: `--seed --steps --guidance --aspect --width --height` (each applied only if the Space exposes that parameter) and `--enhance` (default OFF — `prompt_enhance` is disabled for more literal output and to dodge broken enhancer steps). The script is param-aware: it reads the endpoint's parameter list and fills each slot with the Space's own default unless overridden.
 - If the script prints `AppError: <X>`, the failure is INSIDE the Space (server-side) — not your request. Retry later or use `--space` to point at a mirror. Known: on 2026-06-14 the official `Qwen/Qwen-Image` Space returned `AppError: NameError` (broken upstream); `krea-official`, `flux.1-krea-dev`, and `z-image-turbo` all worked.
 - Canonical script: `~\.claude\skills\image-gen\scripts\generate_image.py`. Venv: `~\Claude\tools\image-gen\.venv`. Output: `~\Claude\generated-images\`.
+
+## Companion scripts
+- `scripts\stylize.py` — img2img repaint/edit (FLUX.1-Kontext-Dev), preserves faces. `--image --prompt --label --out`. The route for "turn this photo into a painting in style X".
+- `scripts\upscale.py` — enlarge/sharpen for print. `--method lanczos` (default, FREE, no GPU — best for paintings, no face hallucination) or `--method pasd|superface` (GPU). `--image` or `--dir` (batch), `--scale`.
+
+## Additional engines researched (2026-06-24) — addable when needed
+- **More img2img/edit (HF, share the same ZeroGPU quota):** `linoyts/Qwen-Image-Edit-2511-Fast` (4-step; input is a *gallery list* `[{image:handle_file(p),caption:None}]`, tiny 256 default dims — must override), `prithivMLmods/FireRed-Image-Edit-1.0-Fast` (input is *base64-JSON* string — awkward). Kontext remains primary (cleanest single-image API).
+- **Upscale/restore (HF):** `fffiloni/PASD` (`/super_resolve_image`, filepath in, `upscale` factor), `leonelhs/superface` (`/predict`, face restore — dead simple), `prithivMLmods/PiD-Image-Upscaler`. Wired into upscale.py (pasd, superface).
+- **Beating the ZeroGPU quota wall** needs NON-HF GPUs: HF PRO (same account, $9/mo, 40min/day), RunComfy (CLI+token+credits — NOT installed here), or Replicate/fal.ai/Stability API (need keys — none set here). Adding more HF Spaces does NOT help; they share sipen's pool.
